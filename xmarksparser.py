@@ -49,7 +49,10 @@ class XMarksParser(HTMLParser):
 
     def handle_endtag(self, tag):
         if tag in ("dl", "a"):
-            self._item_stack.pop()
+            item = self._item_stack.pop()
+
+            if isinstance(item, dict) and "title" not in item["properties"]:
+                item["properties"]["title"] = "No Title"
 
         if tag in ("dl", "a", "h3"):
             if len(self._item_stack) == 1:
