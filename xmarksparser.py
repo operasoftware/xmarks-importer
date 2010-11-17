@@ -21,8 +21,6 @@ class XMarksParser(HTMLParser):
 
 
     def handle_starttag(self, tag, attrs):
-        print "Starting to handle %s at state %s" % (tag, self._state)
-        print "Stack depth %d" % len(self._item_stack)
         if tag == "dl":
             if self._state == "start":
                 self._state = "top"
@@ -49,10 +47,7 @@ class XMarksParser(HTMLParser):
             self._state = "bookmark"
             self._item_stack.append(bookmark)
 
-        print "Handled start tag %s and set state %s" % (tag, self._state)
-
     def handle_endtag(self, tag):
-        print "Handling end of %s at state %s" % (tag, self._state)
         if tag in ("dl", "a"):
             self._item_stack.pop()
 
@@ -62,9 +57,6 @@ class XMarksParser(HTMLParser):
             else:
                 self._state = "folder"
 
-
     def handle_data(self, data):
         if self._state in ("foldertitle", "bookmark"):
-            print "Handling data (%s) at state %s" % (data, self._state)
-            print self._item_stack[-1]
             self._item_stack[-1]["properties"]["title"] = data
