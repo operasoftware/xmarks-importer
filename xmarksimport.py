@@ -1,11 +1,13 @@
 from __future__ import with_statement
 
 import sys
-import xmarksparser
+import json
 
 from pyoperalink.auth import OAuth
-from pyoperalink.request import LinkClient
-from pyoperalink.datatypes import Bookmark, BookmarkFolder
+from pyoperalink.datatypes import BookmarkFolder
+from pyoperalink.client import LinkClient, OPERA_LINK_URL
+
+import xmarksparser
 
 if len(sys.argv) != 2:
     print "xmarksimport.py imports an HTML bookmark file to your Link account."
@@ -22,10 +24,12 @@ with open(bookmark_file) as bookmark_file:
     parser.feed(content.decode('utf-8'))
 
 # ---------------------------------
-# import pprint
-# pp = pprint.PrettyPrinter(indent=4)
-# pp.pprint(parser.bookmarks())
+#import pprint
+#pp = pprint.PrettyPrinter(indent=4)
+#pp.pprint(parser.bms)
+#sys.exit(1)
 # ---------------------------------
+
 
 auth = OAuth('0pkSfFbxApCMWoXKi0n67FgNxe2anNSq',
              'DUHLAnWClwT89HVrJwsSOLpOUrn1lYSk')
@@ -48,19 +52,16 @@ except IOError:
 
 client = LinkClient(auth)
 
-def import_bookmarks(client, import_folder, source_bookmark_folder):
-    for bm_data in source_bookmark_folder['children']:
-        if bm_data['type'] == 'bookmark':
-            print ">> Bookmark '%s' => '%s'" % \
-                (bm_data['title'], bm_data['url'])
-            bm = Bookmark(title=bm_data['title'], uri=bm_data['url'])
-            client.add_to_folder(bm, import_folder)
-        elif bm_data['type'] == 'folder':
-            print "Folder '%s'" % \
-                (bm_data['title'],)
-            bmf = BookmarkFolder(title=bm_data['title'])
-            client.add_to_folder(bmf, import_folder)
-            import_bookmarks(client, bmf, bm_data)
+
+def import_bookmarks(auth, folder_id, bookmark_tree):
+    oauth_client = auth.Client(auth._consumer, auth.access_token)
+    headers = {"Accept:": "application/json", "Content-Type": "application/json"}
+    method = "POST"
+    url = OPERA_LINK_URL + "bookmark/%s/import/" % folder_id
+    body = json.dumps(bookmark_tree)
+    resp, content = oauth_client.request(url, method, body=body, headers=headers)
+    print resp
+    print content
 
 # Try to find previous import folder
 import_folder = None
@@ -72,5 +73,4 @@ if import_folder is None:
     import_folder = BookmarkFolder(title='Xmarks')
     client.add(import_folder)
 
-
-import_bookmarks(client, import_folder, parser.bookmarks())
+import_bookmarks(auth, import_folder.id, parser.bms)
