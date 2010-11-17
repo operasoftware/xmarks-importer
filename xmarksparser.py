@@ -4,48 +4,67 @@ class XMarksParser(HTMLParser):
 
     def __init__(self):
         HTMLParser.__init__(self)
-        self._bms = None
-        self._current_f = None
-        self._state = ''
+        self.bms = []
+        self._item_stack = [self.bms, ]
+        self._state = 'start'
+
+    def append_item(self, item):
+        # In the root, we simply append the item,
+        # otherwise we have to add to to children
+        if self._state == "top":
+            self._item_stack[-1].append(item)
+        elif self._state == "folder":
+            parent = self._item_stack[-1]
+            if "children" not in parent:
+                parent["children"] = []
+            parent["children"].append(item)
+
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'h3':
+        print "Starting to handle %s at state %s" % (tag, self._state)
+        print "Stack depth %d" % len(self._item_stack)
+        if tag == "dl":
+            if self._state == "start":
+                self._state = "top"
+
+        elif tag == 'h3':
+            folder = {
+                "item_type": "bookmark_folder",
+                "properties": {},
+                }
+
+            self.append_item(folder)
+            self._item_stack.append(folder)
             self._state = 'foldertitle'
+
         elif tag == 'a':
+            bookmark = {
+                "item_type": "bookmark",
+                "properties": {},
+                }
+            for name, value in attrs:
+                if name == "href":
+                    bookmark["properties"]["uri"] = value
+            self.append_item(bookmark)
             self._state = 'bookmark'
-            href_attrs = [pair[1] for pair in attrs if pair[0] == 'href']
-            self._bookmark_url = href_attrs[0]
+            self._item_stack.append(bookmark)
+
+        print "Handled start tag %s and set state %s" % (tag, self._state)
 
     def handle_endtag(self, tag):
-        if tag == 'h3':
-            f = {'type': 'folder',
-                 'title': self._data,
-                 'children': [],
-                 'parent_folder': self._current_folder()}
-            self._current_folder()['children'].append(f)
-            self._current_f = f
-            self._state = ''
-        if tag == 'a':
-            self._current_folder()['children'].\
-                append({'type': 'bookmark',
-                        'title': self._data,
-                        'url': self._bookmark_url})
-            self._state = ''
-        if tag == 'dl':
-            self._current_f = self._current_folder()['parent_folder']
+        print "Handling end of %s at state %s" % (tag, self._state)
+        if tag in ("dl", "a"):
+            self._item_stack.pop()
+
+        if tag in ("dl", "a", "h3"):
+            if len(self._item_stack) == 1:
+                self._state = "top"
+            else:
+                self._state = "folder"
+
 
     def handle_data(self, data):
-        if self._state == 'foldertitle' or self._state == 'bookmark':
-            self._data = data
-
-    def bookmarks(self):
-        if self._bms is None:
-            self._bms = {'type': 'folder',
-                         'parent_folder': None,
-                         'children': []}
-        return self._bms
-
-    def _current_folder(self):
-        if self._current_f is None:
-            self._current_f = self.bookmarks()
-        return self._current_f
+        if self._state in ("foldertitle", "bookmark"):
+            print "Handling data (%s) at state %s" % (data, self._state)
+            print self._item_stack[-1]
+            self._item_stack[-1]["properties"]["title"] = data
