@@ -6,7 +6,7 @@ class XMarksParser(HTMLParser):
         HTMLParser.__init__(self)
         self.bms = []
         self._item_stack = [self.bms, ]
-        self._state = 'start'
+        self._state = "start"
 
     def append_item(self, item):
         # In the root, we simply append the item,
@@ -27,7 +27,7 @@ class XMarksParser(HTMLParser):
             if self._state == "start":
                 self._state = "top"
 
-        elif tag == 'h3':
+        elif tag == "h3":
             folder = {
                 "item_type": "bookmark_folder",
                 "properties": {},
@@ -35,9 +35,9 @@ class XMarksParser(HTMLParser):
 
             self.append_item(folder)
             self._item_stack.append(folder)
-            self._state = 'foldertitle'
+            self._state = "foldertitle"
 
-        elif tag == 'a':
+        elif tag == "a":
             bookmark = {
                 "item_type": "bookmark",
                 "properties": {},
@@ -46,7 +46,7 @@ class XMarksParser(HTMLParser):
                 if name == "href":
                     bookmark["properties"]["uri"] = value
             self.append_item(bookmark)
-            self._state = 'bookmark'
+            self._state = "bookmark"
             self._item_stack.append(bookmark)
 
         print "Handled start tag %s and set state %s" % (tag, self._state)
