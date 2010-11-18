@@ -23,14 +23,6 @@ with open(bookmark_file) as bookmark_file:
     parser = xmarksparser.XMarksParser()
     parser.feed(content.decode('utf-8'))
 
-# ---------------------------------
-#import pprint
-#pp = pprint.PrettyPrinter(indent=4)
-#pp.pprint(parser.bms)
-#sys.exit(1)
-# ---------------------------------
-
-
 auth = OAuth('0pkSfFbxApCMWoXKi0n67FgNxe2anNSq',
              'DUHLAnWClwT89HVrJwsSOLpOUrn1lYSk')
 
@@ -41,7 +33,7 @@ try:
         auth.set_access_token(a_t, a_t_s)
 except IOError:
     url = auth.get_authorization_url()
-    print "Now go to:\n\n%s\n\nand type here the verifier code you get:" % (url)
+    print "Now go to:\n%s\nand type here the verifier code you get:" % (url)
     verifier = raw_input()
     if verifier == "":
         print "You need to write the verifier code. Please try again."
@@ -54,14 +46,22 @@ client = LinkClient(auth)
 
 
 def import_bookmarks(auth, folder_id, bookmark_tree):
-    oauth_client = auth.Client(auth._consumer, auth.access_token)
-    headers = {"Accept:": "application/json", "Content-Type": "application/json"}
+    raw_client = auth.Client(auth._consumer, auth.access_token)
+    headers = {
+        "Accept:": "application/json",
+        "Content-Type": "application/json",
+        }
     method = "POST"
     url = OPERA_LINK_URL + "bookmark/%s/import/" % folder_id
     body = json.dumps(bookmark_tree)
-    resp, content = oauth_client.request(url, method, body=body, headers=headers)
-    print resp
-    print content
+    resp, content = raw_client.request(url, method, body=body, headers=headers)
+
+    if resp["status"] == "200":
+        print "Xmarks import completed successfully"
+    else:
+        print "Something went wrong"
+        print resp
+        print content
 
 # Try to find previous import folder
 import_folder = None
