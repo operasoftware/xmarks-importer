@@ -52,7 +52,7 @@ def import_bookmarks(auth, folder_id, bookmark_tree):
         "Content-Type": "application/json",
         }
     method = "POST"
-    url = OPERA_LINK_URL + "bookmark/%s/import/" % folder_id
+    url = OPERA_LINK_URL + "/bookmark/%s/import/" % folder_id
     body = json.dumps(bookmark_tree)
     resp, content = raw_client.request(url, method, body=body, headers=headers)
 
